@@ -198,14 +198,10 @@ const safeParseJson = async (res: Response) => {
   }
 }
 
-const sha256Hex = async (text: string) => {
+const sha256Hex = async (text: string): Promise<string | null> => {
   const subtle = globalThis.crypto?.subtle
-  if (!subtle) {
-    throw new ApiException({ code: 'INTERNAL_ERROR', message: '当前环境不支持密码加密', status: 0 })
-  }
-  if (globalThis.isSecureContext === false) {
-    throw new ApiException({ code: 'INTERNAL_ERROR', message: '当前环境不安全，请使用 HTTPS 或 localhost 访问', status: 0 })
-  }
+  if (!subtle) return null
+  if (globalThis.isSecureContext === false) return null
   const data = new TextEncoder().encode(text)
   const buf = await subtle.digest('SHA-256', data)
   return Array.from(new Uint8Array(buf))
@@ -285,11 +281,16 @@ const refreshMe = async () => {
 }
 
 const loginWithPassword = async (input: { account: string; password: string; remember: boolean }) => {
-  const passwordHash = await sha256Hex(input.password)
+  let passwordHash: string | null = null
+  try {
+    passwordHash = await sha256Hex(input.password)
+  } catch {
+    passwordHash = null
+  }
   const data = await apiFetch<{ accessToken: string; user: User }>({
     method: 'POST',
     path: '/auth/login',
-    body: { account: input.account, passwordHash },
+    body: passwordHash ? { account: input.account, passwordHash } : { account: input.account, password: input.password },
     auth: false,
   })
   token.value = data.accessToken
