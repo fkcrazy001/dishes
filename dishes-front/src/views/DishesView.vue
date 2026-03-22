@@ -534,7 +534,6 @@ const submitDishCreate = async () => {
       <div class="panel">
         <div class="panel-head">
           <h2>今日菜单</h2>
-          <div class="meta">{{ filteredDishes.length }} 道菜 · 图片展示 + 简短说明</div>
         </div>
         <div class="menu">
           <div class="grid">
